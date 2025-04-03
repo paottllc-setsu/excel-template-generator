@@ -1,0 +1,24 @@
+{
+  "clientName": "B1",
+  "totalWithTax1": "C11",
+  "mitumoriNo": "M2",
+  "dateTime": "M3",
+  "mainNote": "K17",
+  "totalAmount": "L24",
+  "tax": "L26",
+  "totalWithTax2": "L27",
+  "items": {
+    "startRow": 16,
+    "page2StartRow": 39,
+    "page3StartRow": 75,
+    "firstPageItemsPerPage": 21,
+    "secondPagesItemsPerPage": 34,
+    "thirdPagesItemsPerPage": 34,
+    "name": "B",
+    "quantity": "E",
+    "unit": "F",
+    "price": "G",
+    "amount": "H",
+    "subNote": "I"
+  }
+}

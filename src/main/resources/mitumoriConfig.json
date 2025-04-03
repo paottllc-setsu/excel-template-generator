@@ -1,0 +1,15 @@
+[
+  { "key": "見積書_タイトル", "cellAddress": "G4", "value": "御　見　積　書" },
+  { "key": "見積書_挨拶文", "cellAddress": "B8", "value": "下記のとおり、御見積もり申し上げます。" },
+  { "key": "見積書_見積Noラベル", "cellAddress": "L2", "value": "見積No" },
+  { "key": "見積書_見積日ラベル", "cellAddress": "L3", "value": "見積日" },
+  { "key": "見積書_会社名", "cellAddress": "K5", "value": "トータルサービスあらい" },
+  { "key": "見積書_登録番号ラベル", "cellAddress": "K6", "value": "登録番号：T5810057404783" },
+  { "key": "見積書_郵便番号ラベル", "cellAddress": "K7", "value": "〒235-0012" },
+  { "key": "見積書_住所ラベル", "cellAddress": "K8", "value": "神奈川県横浜市磯子区滝頭2-21-16" },
+  { "key": "見積書_電話番号ラベル", "cellAddress": "K9", "value": "℡090-2643-0627 fax045-751-4628" },
+  { "key": "見積書_空白1", "cellAddress": "K11", "value": " " },
+  { "key": "見積書_空白2", "cellAddress": "K12", "value": " " },
+  { "key": "見積書_空白3", "cellAddress": "K13", "value": " " },
+  { "key": "見積書_消費税率ラベル", "cellAddress": "L25", "value": "10%" }
+]
