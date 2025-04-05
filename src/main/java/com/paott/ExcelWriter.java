@@ -244,7 +244,7 @@ public class ExcelWriter {
 			} else { 
 				totalRow = page3StartRow + page3Items; // その他は全て109行目
 			}
-			//writeCell(sheet, "B" + totalRow, "合計");
+			//writeCell(sheet, "B" + totalRow, "合計"); 
 			//writeCell(sheet, "H" + totalRow, String.valueOf(totalAmount));
 			writeCell(sheet, items.getString("column1") + totalRow, "合計");
 			writeCell(sheet, items.getString("column5") + totalRow, String.valueOf(totalAmount));
