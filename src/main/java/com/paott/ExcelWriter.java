@@ -28,7 +28,7 @@ public class ExcelWriter {
 		}
 		String templateFilePath = args[0]; // テンプレートファイル
 		String outputFilePath = args[1];  // アウトプットファイル
-		// VB.NET側のresourceディレクトリにJSON設定ファイルを配置し相対パスで指定
+		// 受け取ったデータをJSON設定ファイルを参照して受け取る
 		String cellConfigFilePath = "cellConfig.json";
 		FileInputStream fis = null;
 		Workbook workbook = null;
@@ -40,7 +40,7 @@ public class ExcelWriter {
 			// 設定ファイルを読み込む
 			JSONObject cellConfig = loadJsonFromFile(cellConfigFilePath);
 			
-			// VB.NET側の標準入力からJSONデータを読み込む
+			// 受け取ったデータ標準入力からJSONデータを読み込む
 			BufferedReader reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
 			StringBuilder sb = new StringBuilder();
 			String line;
@@ -60,12 +60,13 @@ public class ExcelWriter {
 				return;
 			}
 			
-			// execModeの値に基づいて、読み込むJSON設定ファイルを切り替える
-			JSONArray configJson;
-			if ("mitumori".equals(mode)) {
-				configJson = loadJsonArrayFromFile("mitumoriConfig.json");
-			} else if ("seikyu".equals(mode)) {
-				configJson = loadJsonArrayFromFile("seikyuConfig.json");
+			// 受け取ったmodeの値に基づいて、読み込むJSON設定ファイルを切り替える
+			// modeが増えれば、else if ("mode2".equals(mode)) で条件式を増やし、jsonファイルを読み込ませる
+			JSONArray modeConfig;
+			if ("mode0".equals(mode)) {
+				modeConfig = loadJsonArrayFromFile("mode0Config.json");
+			} else if ("mode1".equals(mode)) {
+				modeConfig = loadJsonArrayFromFile("mode1Config.json");
 			} else {
 				// エラー処理
 				System.err.println("予期しない mode の値です。");
@@ -74,26 +75,16 @@ public class ExcelWriter {
 			}
 
 			// configJsonがnullの場合、エラー処理を行う
-			if (configJson == null) {
-				System.err.println(configJson + " の読み込みに失敗しました。");
+			if (modeConfig == null) {
+				System.err.println(modeConfig + " の読み込みに失敗しました。");
 				System.exit(5);
 				return;
 			}
 			
 			// データの書き込み処理を記述
 			if (sheet != null) {
-				writeData(workbook, sheet, jsonObject, cellConfig, configJson); // configJsonをwriteDataに渡す
+				writeData(workbook, sheet, jsonObject, cellConfig, modeConfig); // modeConfigをwriteDataに渡す
 			}
-			
-			// 印刷範囲を設定
-			int printEndRow = 37; // デフォルトの印刷範囲の最終行
-			if (sheet.getRow(108) != null && sheet.getRow(108).getCell(1) != null && !sheet.getRow(108).getCell(1).toString().isEmpty() ) {
-				printEndRow = 109; // B109にデータがある場合は109行目まで
-			} else if (sheet.getRow(72) != null && sheet.getRow(72).getCell(1) != null && !sheet.getRow(72).getCell(1).toString().isEmpty()) {
-				printEndRow = 73; // B73にデータがある場合は73行目まで　
-			}
-			workbook.setPrintArea(0, "$A$1:$M$" + printEndRow);
-			
 			FileOutputStream fops = new FileOutputStream(outputFilePath);
 			workbook.write(fops);
 			fops.close();
@@ -145,10 +136,10 @@ public class ExcelWriter {
 		return new JSONArray(content);
 	}
 	
-	public static void writeData(Workbook workbook, Sheet sheet, JSONObject jsonObject, JSONObject cellConfig, JSONArray configJson) {
-		// mitumoriConfig.jsonまたはseikyuConfig.jsonのデータを処理
-		for (int i = 0; i < configJson.length(); i++) {
-			JSONObject config = configJson.getJSONObject(i);
+	public static void writeData(Workbook workbook, Sheet sheet, JSONObject jsonObject, JSONObject cellConfig, JSONArray modeConfig) {
+		// mode.jsonのデータを処理
+		for (int i = 0; i < modeConfig.length(); i++) {
+			JSONObject config = modeConfig.getJSONObject(i);
 			String cellAddress = config.getString("cellAddress");
 			String value = config.getString("value"); // valueキーは必須
 			if (cellAddress != null && !cellAddress.isEmpty()) {
@@ -159,13 +150,13 @@ public class ExcelWriter {
 				}
 			}
 		}
-		// VB.NET側から渡されたJSONデータの書き込み処理
+		// 渡されたJSONデータの書き込み処理
 		for (String key : JSONObject.getNames(cellConfig)) {
 			if (key.equals("items")) { // itemsの処理
 				if (jsonObject.has("items")) {
 					JSONArray items = jsonObject.getJSONArray("items");
 					JSONObject itemsConfig = cellConfig.getJSONObject("items");
-					writeItems(sheet, items, itemsConfig);
+					writeItems(workbook, sheet, items, itemsConfig);
 				} else {
 					System.err.println("JSONデータにitemsキーが存在しません。");
 				}
@@ -182,114 +173,99 @@ public class ExcelWriter {
 			}
 		}
 	}
-	/*public static void writeData(Workbook workbook, Sheet sheet, JSONObject jsonObject, JSONArray cellConfig) {
-		Iterator<String> keys = jsonObject.keys(); //keys() : jsonオブジェクトに含まれるすべてのキーのイテレータを返す　Iterator<String> : 文字列型の要素を順番に所得するためのイテレータの型
-		while (keys.hasNext()) { // whileループを使用し、keysが持つすべてのキーを順番に処理
-			String key = keys.next(); // 次のキーを取得するメソッド
-			if (key.equals("items")) { // キーが "items" と等しいとき
-				JSONArray items = jsonObject.getJSONArray("items"); //JsonArray型(配列)の変数 items に格納
-				// 設定ファイル cellConfig からキー "items" に対応するオブジェクトを取得 itemsConfigオブジェクトはitems配列の各要素をExcelのどのセルに書き込むかの定義する設定情報を持つ
-				JSONObject itemsConfig = cellConfig.getJSONObject("items");
-				writeItems(sheet, items, itemsConfig); // items配列の各要素をExcelシート (sheet) に書き込むためのメソッド
-			} else { // キーが "items" と等しくない時
-				String cellAddress = cellConfig.optString(key); //jsonファイルからセルアドレスを取得
-				String value = jsonObject.optString(key); // JSONオブジェクト (json) からキー (key) に対応する文字列の型の値を取得し、value 変数に格納する
-				if (cellAddress != null && !cellAddress.isEmpty()) { // セルアドレスが有効な場合のみ書き込み
-					try {
-						writeCell(sheet, cellAddress, value); // Excleシート (sheet) の指定されたセル (cellAddress) に値 (value) を書き込むメソッド
-					} catch (IllegalArgumentException e) {
-						System.err.println("セルアドレスが無効です。 key:" + key + " address" + cellAddress);
-					}
-				}
-			}
-		}
-	}*/
-	
+
 	// items配列の各要素をExcelシート (sheet) に書き込むためのメソッド
-	private static void writeItems(Sheet sheet, JSONArray items, JSONObject itemsConfig) {
-		int startRow = itemsConfig.getInt("startRow"); // cellConfigの開始行 (17行目である16) を取得 startRow は書き始めるExcelシートの行番号
-		int page2StartRow = itemsConfig.getInt("page2StartRow"); // 2ページ目の開始行 設定ファイルから取得（40行目である39）
-		int page3StartRow = itemsConfig.getInt("page3StartRow"); // 3ページ目の開始行 設定ファイルから取得（76行目である75）
-		int firstPageItemsPerPage = itemsConfig.getInt("firstPageItemsPerPage"); // 1ページ目は21項目を表示
-		int secondPagesItemsPerPage = itemsConfig.getInt("secondPagesItemsPerPage"); // 2ページ目は34項目を表示
-		int thirdPagesItemsPerPage = itemsConfig.getInt("thirdPagesItemsPerPage"); // 3ページ目は33項目を表示
+	private static void writeItems(Workbook workbook, Sheet sheet, JSONArray itemArray, JSONObject items) {
+		int page1StartRow = items.getInt("page1startRow"); // cellConfigの開始行 (17行目である16) を取得 startRow は書き始めるExcelシートの行番号
+		int page2StartRow = items.getInt("page2StartRow"); // 2ページ目の開始行 設定ファイルから取得（40行目である39）
+		int page3StartRow = items.getInt("page3StartRow"); // 3ページ目の開始行 設定ファイルから取得（76行目である75）
+		int page1Items = items.getInt("page1Items"); // 1ページ目は21項目を表示
+		int page2Items = items.getInt("page2Items"); // 2ページ目は34項目を表示
+		int page3Items = items.getInt("page3Items"); // 3ページ目は33項目を表示
 		int totalAmount = 0; // H列の合計値を格納する変数
-		int itemsLength = items.length(); // JSONArrayの長さ
+		int itemsLength = itemArray.length(); // JSONArrayの長さ
 		int writtenItems = 0;
+		int printEndRow = 0;
 		
 		// 1ページ目の書き込み
 		//for (int i = 0; i < items.length(); i++) { // itemsというJASONArrayの長さだけループする
-		for (int i = 0; i < Math.min(itemsLength, firstPageItemsPerPage); i++) {
-			int rowNum = startRow + i; // 行番号
-			JSONObject item = items.getJSONObject(i); // items配列から i 番目の要素を取得
-			writeItemRow(sheet, item, itemsConfig, rowNum);
+		for (int i = 0; i < Math.min(itemsLength, page1Items); i++) {
+			int rowNum = page1StartRow + i; // 行番号
+			JSONObject item = itemArray.getJSONObject(i); // items配列から i 番目の要素を取得
+			writeItemRow(sheet, item, items, rowNum);
 			// H列の値を合計
 			try {
-				totalAmount += Integer.parseInt(item.getString("amount"));
+				totalAmount += Integer.parseInt(item.getString("column5"));
 			} catch (NumberFormatException e) {
 				// 数値に変換できない場合は無視
 			}
 			writtenItems++;
 		}
+		printEndRow = page1StartRow + page1Items;
 		// 2ページ目の書き込み
-		if (itemsLength > firstPageItemsPerPage) {
-			for (int i = 0; i < Math.min(itemsLength - firstPageItemsPerPage, secondPagesItemsPerPage); i++) {
+		if (itemsLength > page1Items) {
+			for (int i = 0; i < Math.min(itemsLength - page1Items, page2Items); i++) {
 				int rowNum = page2StartRow + i;
-				JSONObject item = items.getJSONObject(firstPageItemsPerPage + i);
-				writeItemRow(sheet, item, itemsConfig, rowNum);
+				JSONObject item = itemArray.getJSONObject(page1Items + i);
+				writeItemRow(sheet, item, items, rowNum);
 				try {
-					totalAmount += Integer.parseInt(item.getString("amount"));
+					totalAmount += Integer.parseInt(item.getString("column5"));
 				} catch (NumberFormatException e) {
 					// 数値に変換できない場合は無視
 				}
 				writtenItems++;
 			}
+			printEndRow = page2StartRow + page2Items;
 		}
 		// 3ページ目の書き込み
-		if (itemsLength > firstPageItemsPerPage + secondPagesItemsPerPage) {			
-			for (int i = 0; i < Math.min(itemsLength - firstPageItemsPerPage - secondPagesItemsPerPage, thirdPagesItemsPerPage); i++) {
+		if (itemsLength > page1Items + page2Items) {			
+			for (int i = 0; i < Math.min(itemsLength - page1Items - page2Items, page3Items); i++) {
 				int rowNum = page3StartRow + i;
-				JSONObject item = items.getJSONObject(firstPageItemsPerPage + secondPagesItemsPerPage + i);
-				writeItemRow(sheet, item, itemsConfig, rowNum);
+				JSONObject item = itemArray.getJSONObject(page1Items + page2Items + i);
+				writeItemRow(sheet, item, items, rowNum);
 				try {
-					totalAmount += Integer.parseInt(item.getString("amount"));
+					totalAmount += Integer.parseInt(item.getString("column5"));
 				} catch (NumberFormatException e){
 					// 数値に変換できない場合は無視
 				}
 				writtenItems++;
 			}
+			printEndRow = page3StartRow + page3Items;
 		}
 		// 合計行の書き込み
 		if (writtenItems > 0) {
 			int totalRow;
-			if (writtenItems < firstPageItemsPerPage) { // totalRow含めて1ページ内(37行目)で収まる時
-				totalRow = startRow + firstPageItemsPerPage; // 37行目
-			} else if (writtenItems == firstPageItemsPerPage) { // 1ページ目の最後(37行目)にデータが入っている時
-				totalRow = page2StartRow + secondPagesItemsPerPage; // 73行目
-			} else if (writtenItems < firstPageItemsPerPage + secondPagesItemsPerPage) { // totalRow含めて2ページ内(73行目)で収まる時
-				totalRow = page2StartRow + secondPagesItemsPerPage; // 73行目
+			if (writtenItems < page1Items) { // totalRow含めて1ページ内(37行目)で収まる時
+				totalRow = page1StartRow + page1Items; // 37行目
+			} else if (writtenItems == page1Items) { // 1ページ目の最後(37行目)にデータが入っている時
+				totalRow = page2StartRow + page2Items; // 73行目
+			} else if (writtenItems < page1Items + page2Items) { // totalRow含めて2ページ内(73行目)で収まる時
+				totalRow = page2StartRow + page2Items; // 73行目
 			} else { 
-				totalRow = page3StartRow + thirdPagesItemsPerPage; // その他は全て109行目
+				totalRow = page3StartRow + page3Items; // その他は全て109行目
 			}
-			writeCell(sheet, "B" + totalRow, "合計");
-			writeCell(sheet, "H" + totalRow, String.valueOf(totalAmount));
+			//writeCell(sheet, "B" + totalRow, "合計");
+			//writeCell(sheet, "H" + totalRow, String.valueOf(totalAmount));
+			writeCell(sheet, items.getString("column1") + totalRow, "合計");
+			writeCell(sheet, items.getString("column5") + totalRow, String.valueOf(totalAmount));
 		}
+		workbook.setPrintArea(0, "$A$1:$M$" + printEndRow);
 	}
 	
-	private static void writeItemRow(Sheet sheet, JSONObject item, JSONObject itemsConfig, int rowNum) {
+	private static void writeItemRow(Sheet sheet, JSONObject item, JSONObject items, int rowNum) {
 		Row row = sheet.getRow(rowNum); // Excelシートの startRow + i 行目のオブジェクトを取得し row に代入
 		if (row == null) {
 			row = sheet.createRow(rowNum); // 取得しようとした行が null の場合、新しい行を作成し row に代入
 		}
 		// writeCell はExcelシートの指定されたセルに値を書き込む関数 
-		// itemsConfig.getString("name") 設定ファイルから"name"に対応する列名(B列)を取得
-		// item.getString("name") 現在の"name"に対応する値を取得
-		writeCell(sheet, itemsConfig.getString("name") + (rowNum + 1), item.getString("name"));
-		writeCell(sheet, itemsConfig.getString("quantity") + (rowNum + 1), item.getString("quantity"));
-		writeCell(sheet, itemsConfig.getString("unit") + (rowNum + 1), item.getString("unit"));
-		writeCell(sheet, itemsConfig.getString("price") + (rowNum + 1), item.getString("price"));
-		writeCell(sheet, itemsConfig.getString("amount") + (rowNum + 1), item.getString("amount"));
-		writeCell(sheet, itemsConfig.getString("subNote") + (rowNum + 1), item.getString("subNote"));
+		// itemsConfig.getString("column") 設定ファイルから"column"に対応する列名(B列)を取得
+		// item.getString("column") 現在の"column"に対応する値を取得
+		writeCell(sheet, items.getString("column1") + (rowNum + 1), item.getString("column1"));
+		writeCell(sheet, items.getString("column2") + (rowNum + 1), item.getString("column2"));
+		writeCell(sheet, items.getString("column3") + (rowNum + 1), item.getString("column3"));
+		writeCell(sheet, items.getString("column4") + (rowNum + 1), item.getString("column4"));
+		writeCell(sheet, items.getString("column5") + (rowNum + 1), item.getString("column5"));
+		writeCell(sheet, items.getString("column6") + (rowNum + 1), item.getString("column6"));
 	}
 
 	public static void writeCell(Sheet sheet, String cellAddress, String cellvalue) { // cellAddress 書き込み先のセルアドレス ("A1", "B5")を表す文字列
