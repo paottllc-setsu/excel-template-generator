@@ -1,0 +1,24 @@
+{
+  "clientName": "B1",
+  "totalWithTax1": "C11",
+  "mitumoriNo": "M2",
+  "dateTime": "M3",
+  "mainNote": "K17",
+  "totalAmount": "L24",
+  "tax": "L26",
+  "totalWithTax2": "L27",
+  "items": {
+    "page1startRow": 16,
+    "page2StartRow": 39,
+    "page3StartRow": 75,
+    "page1Items": 21,
+    "page2Items": 34,
+    "page3Items": 34,
+    "column1": "B",
+    "column2": "E",
+    "column3": "F",
+    "column4": "G",
+    "column5": "H",
+    "column6": "I"
+  }
+}

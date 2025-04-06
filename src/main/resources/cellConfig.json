@@ -8,17 +8,17 @@
   "tax": "L26",
   "totalWithTax2": "L27",
   "items": {
-    "startRow": 16,
+    "page1startRow": 16,
     "page2StartRow": 39,
     "page3StartRow": 75,
-    "firstPageItemsPerPage": 21,
-    "secondPagesItemsPerPage": 34,
-    "thirdPagesItemsPerPage": 34,
-    "name": "B",
-    "quantity": "E",
-    "unit": "F",
-    "price": "G",
-    "amount": "H",
-    "subNote": "I"
+    "page1Items": 21,
+    "page2Items": 34,
+    "page3Items": 34,
+    "column1": "B",
+    "column2": "E",
+    "column3": "F",
+    "column4": "G",
+    "column5": "H",
+    "column6": "I"
   }
 }

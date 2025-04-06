@@ -82,8 +82,8 @@
                                     <directory>src/main/resources</directory>
                                     <includes>
                                         <include>cellConfig.json</include>
-                                        <include>mitumoriConfig.json</include>
-                                        <include>seikyuConfig.json</include>
+                                        <include>mode0Config.json</include>
+                                        <include>mode1Config.json</include>
                                     </includes>
                                 </resource>
                             </resources>
