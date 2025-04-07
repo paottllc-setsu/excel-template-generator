@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -44,10 +45,16 @@ public class ExcelWriter {
 			BufferedReader reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
 			StringBuilder sb = new StringBuilder();
 			String line;
-			while ((line = reader.readLine()) != null) {
-				sb.append(line);
-			}
+			
+			/******************************************************************/
+			// ★デバッグ用
 			String jsonData = sb.toString();
+			jsonData = "{\"mode\":\"mode0\",\"items\":[{\"column1\":\"Popon\",\"column2\":\"1\",\"column3\":\"200\",\"column4\":\"200\",\"amount\":\"50\",\"column6\":\"備考\"},{\"column1\":\"Babanana\",\"column2\":\"3\",\"column3\":\"100\",\"column4\":\"5000\",\"amount\":\"10\",\"column6\":\"備考s\"}]}";
+			//jsonData = "{\"mode\":\"mode0\",\"items\":[{\"column1\":\"Popon\",\"column2\":\"1\",\"column3\":\"200\",\"column4\":\"200\",\"column5\":\"50\",\"column6\":\"備考\"},{\"column1\":\"Babanana\",\"column2\":\"3\",\"column3\":\"100\",\"column4\":\"5000\",\"column5\":\"10\",\"column6\":\"備考s\"}]}";
+//			while ((line = reader.readLine()) != null) {
+//				sb.append(line);
+//			}
+			/******************************************************************/
 			JSONObject jsonObject = new JSONObject(jsonData);
 			
 			// VB.NETからexecModeの値を受け取る mitumori Or seikyu
@@ -195,7 +202,13 @@ public class ExcelWriter {
 			writeItemRow(sheet, item, items, rowNum);
 			// H列の値を合計
 			try {
-				totalAmount += Integer.parseInt(item.getString("column5"));
+				if(item.has("amount")) {
+					totalAmount += Integer.parseInt(item.getString("amount"));
+				}else {
+					totalAmount += Integer.parseInt(item.getString("column5"));
+				}
+				//totalAmount += Integer.parseInt(item.getString("column5"));
+				
 			} catch (NumberFormatException e) {
 				// 数値に変換できない場合は無視
 			}
@@ -209,7 +222,8 @@ public class ExcelWriter {
 				JSONObject item = itemArray.getJSONObject(page1Items + i);
 				writeItemRow(sheet, item, items, rowNum);
 				try {
-					totalAmount += Integer.parseInt(item.getString("column5"));
+					//totalAmount += Integer.parseInt(item.getString("column5"));
+					totalAmount += Integer.parseInt(item.getString("amount"));
 				} catch (NumberFormatException e) {
 					// 数値に変換できない場合は無視
 				}
@@ -224,7 +238,8 @@ public class ExcelWriter {
 				JSONObject item = itemArray.getJSONObject(page1Items + page2Items + i);
 				writeItemRow(sheet, item, items, rowNum);
 				try {
-					totalAmount += Integer.parseInt(item.getString("column5"));
+					//totalAmount += Integer.parseInt(item.getString("column5"));
+					totalAmount += Integer.parseInt(item.getString("amount"));
 				} catch (NumberFormatException e){
 					// 数値に変換できない場合は無視
 				}
@@ -246,8 +261,17 @@ public class ExcelWriter {
 			}
 			//writeCell(sheet, "B" + totalRow, "合計"); 
 			//writeCell(sheet, "H" + totalRow, String.valueOf(totalAmount));
-			writeCell(sheet, items.getString("column1") + totalRow, "合計");
-			writeCell(sheet, items.getString("column5") + totalRow, String.valueOf(totalAmount));
+			
+			//writeCell(sheet, items.getString("column1") + totalRow, "合計");
+			
+			if(items.has("amount")) {
+				writeCell(sheet, items.getString("column1") + totalRow, "合計");
+				writeCell(sheet, items.getString("amount") + totalRow, String.valueOf(totalAmount));
+			}else {
+				//何もしない
+			}
+			//writeCell(sheet, items.getString("column5") + totalRow, String.valueOf(totalAmount));
+			
 		}
 		workbook.setPrintArea(0, "$A$1:$M$" + printEndRow);
 	}
@@ -264,7 +288,27 @@ public class ExcelWriter {
 		writeCell(sheet, items.getString("column2") + (rowNum + 1), item.getString("column2"));
 		writeCell(sheet, items.getString("column3") + (rowNum + 1), item.getString("column3"));
 		writeCell(sheet, items.getString("column4") + (rowNum + 1), item.getString("column4"));
-		writeCell(sheet, items.getString("column5") + (rowNum + 1), item.getString("column5"));
+		
+		/*********************************************************************************************************/
+		Iterator<String> ite = item.keys();
+		while(ite.hasNext()) {
+			String key = ite.next();
+			System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> "+key);
+			
+			// このイテレータを利用して
+			// キーワードを動的に判定できるのでは？
+			
+			// あと、合計行の罫線もヨロシク( ｀・∀・´)ﾉﾖﾛｼｸ
+		}
+		
+		//writeCell(sheet, items.getString("column5") + (rowNum + 1), item.getString("column5"));
+		if(item.has("amount")) {
+			writeCell(sheet, items.getString("amount") + (rowNum + 1), item.getString("amount"));
+		}else {
+			writeCell(sheet, items.getString("column5") + (rowNum + 1), item.getString("column5"));
+		}
+		/*********************************************************************************************************/
+		
 		writeCell(sheet, items.getString("column6") + (rowNum + 1), item.getString("column6"));
 	}
 
