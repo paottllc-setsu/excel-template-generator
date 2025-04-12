@@ -9,11 +9,15 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 
+import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.CellReference;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -31,6 +35,7 @@ public class ExcelWriter {
 		String outputFilePath = args[1];  // アウトプットファイル
 		// 受け取ったデータをJSON設定ファイルを参照して受け取る
 		String cellConfigFilePath = "cellConfig.json";
+		//String testData = null;
 		FileInputStream fis = null;
 		Workbook workbook = null;
 		
@@ -48,16 +53,18 @@ public class ExcelWriter {
 			
 			/******************************************************************/
 			// ★デバッグ用
-			String jsonData = sb.toString();
-			jsonData = "{\"mode\":\"mode0\",\"items\":[{\"column1\":\"Popon\",\"column2\":\"1\",\"column3\":\"200\",\"column4\":\"200\",\"amount\":\"50\",\"column6\":\"備考\"},{\"column1\":\"Babanana\",\"column2\":\"3\",\"column3\":\"100\",\"column4\":\"5000\",\"amount\":\"10\",\"column6\":\"備考s\"}]}";
+			//jsonData = "{\"mode\":\"mode0\",\"items\":[{\"column1\":\"Popon\",\"column2\":\"1\",\"column3\":\"200\",\"column4\":\"200\",\"amount\":\"50\",\"column6\":\"備考\"},{\"column1\":\"Babanana\",\"column2\":\"3\",\"column3\":\"100\",\"column4\":\"5000\",\"amount\":\"10\",\"column6\":\"備考s\"}]}";
 			//jsonData = "{\"mode\":\"mode0\",\"items\":[{\"column1\":\"Popon\",\"column2\":\"1\",\"column3\":\"200\",\"column4\":\"200\",\"column5\":\"50\",\"column6\":\"備考\"},{\"column1\":\"Babanana\",\"column2\":\"3\",\"column3\":\"100\",\"column4\":\"5000\",\"column5\":\"10\",\"column6\":\"備考s\"}]}";
-//			while ((line = reader.readLine()) != null) {
-//				sb.append(line);
-//			}
+			/**/
+			while ((line = reader.readLine()) != null) {
+			sb.append(line);
+			}
+			String jsonData = sb.toString();
 			/******************************************************************/
+			//testData = jsonData;
 			JSONObject jsonObject = new JSONObject(jsonData);
-			
-			// VB.NETからexecModeの値を受け取る mitumori Or seikyu
+
+			// VB.NETからexecModeの値を受け取る mode0 Or mode1
 			String mode = jsonObject.getString("mode");
 			
 			// modeの値がnullまたは空文字列の場合、エラー処理を行う
@@ -105,7 +112,7 @@ public class ExcelWriter {
 			System.out.flush(); // 明示的にフラッシュ
 			System.exit(2);
 		} catch(JSONException e) {
-			System.err.println("JSONデータの解析に失敗しました。：" + e.getMessage());
+			System.err.println("JSONデータの解析に失敗しました。："  + e.getMessage());
 			e.printStackTrace();
 			System.exit(3);
 		} finally {
@@ -154,7 +161,8 @@ public class ExcelWriter {
 					writeCell(sheet, cellAddress, value);
 				} catch (IllegalArgumentException e) {
 					System.err.println("セルアドレスが無効です。key:" + config.getString("key") + " address:" + cellAddress);
-				}
+					System.exit(5);
+				} 
 			}
 		}
 		// 渡されたJSONデータの書き込み処理
@@ -166,6 +174,7 @@ public class ExcelWriter {
 					writeItems(workbook, sheet, items, itemsConfig);
 				} else {
 					System.err.println("JSONデータにitemsキーが存在しません。");
+					System.exit(5);
 				}
 			} else { //その他のキーの処理
 				String cellAddress = cellConfig.optString(key);
@@ -175,6 +184,7 @@ public class ExcelWriter {
 						writeCell(sheet, cellAddress, value);
 					} catch (IllegalArgumentException e) {
 						System.err.println("セルアドレスが無効です。key:" + key + "address:" + cellAddress);
+						System.exit(5);
 					}
 				}
 			}
@@ -183,7 +193,7 @@ public class ExcelWriter {
 
 	// items配列の各要素をExcelシート (sheet) に書き込むためのメソッド
 	private static void writeItems(Workbook workbook, Sheet sheet, JSONArray itemArray, JSONObject items) {
-		int page1StartRow = items.getInt("page1startRow"); // cellConfigの開始行 (17行目である16) を取得 startRow は書き始めるExcelシートの行番号
+		int page1StartRow = items.getInt("page1StartRow"); // cellConfigの開始行 (17行目である16) を取得 startRow は書き始めるExcelシートの行番号
 		int page2StartRow = items.getInt("page2StartRow"); // 2ページ目の開始行 設定ファイルから取得（40行目である39）
 		int page3StartRow = items.getInt("page3StartRow"); // 3ページ目の開始行 設定ファイルから取得（76行目である75）
 		int page1Items = items.getInt("page1Items"); // 1ページ目は21項目を表示
@@ -202,15 +212,16 @@ public class ExcelWriter {
 			writeItemRow(sheet, item, items, rowNum);
 			// H列の値を合計
 			try {
-				if(item.has("amount")) {
+				if (item.has("amount")) {
 					totalAmount += Integer.parseInt(item.getString("amount"));
-				}else {
-					totalAmount += Integer.parseInt(item.getString("column5"));
+				} else {
+					//totalAmount += Integer.parseInt(item.getString("column5"));
 				}
-				//totalAmount += Integer.parseInt(item.getString("column5"));
-				
 			} catch (NumberFormatException e) {
 				// 数値に変換できない場合は無視
+			} catch (Exception e) {
+				System.err.println("1ページ目の書き込みができません。");
+				System.exit(9);
 			}
 			writtenItems++;
 		}
@@ -222,10 +233,16 @@ public class ExcelWriter {
 				JSONObject item = itemArray.getJSONObject(page1Items + i);
 				writeItemRow(sheet, item, items, rowNum);
 				try {
-					//totalAmount += Integer.parseInt(item.getString("column5"));
-					totalAmount += Integer.parseInt(item.getString("amount"));
+					if (item.has("amount")) {
+						totalAmount += Integer.parseInt(item.getString("amount"));
+					} else {
+						//totalAmount += Integer.parseInt(item.getString("column5"));
+					}
 				} catch (NumberFormatException e) {
 					// 数値に変換できない場合は無視
+				} catch (Exception e) {
+					System.err.println("2ページ目の書き込みができません。");
+					System.exit(10);
 				}
 				writtenItems++;
 			}
@@ -238,10 +255,16 @@ public class ExcelWriter {
 				JSONObject item = itemArray.getJSONObject(page1Items + page2Items + i);
 				writeItemRow(sheet, item, items, rowNum);
 				try {
-					//totalAmount += Integer.parseInt(item.getString("column5"));
-					totalAmount += Integer.parseInt(item.getString("amount"));
-				} catch (NumberFormatException e){
+					if (item.has("amount")) {
+						totalAmount += Integer.parseInt(item.getString("amount"));
+					} else {
+						//totalAmount += Integer.parseInt(item.getString("column5"));
+					}
+				} catch (NumberFormatException e) {
 					// 数値に変換できない場合は無視
+				} catch (Exception e) {
+					System.err.println("3ページ目の書き込みができません。");
+					System.exit(11);
 				}
 				writtenItems++;
 			}
@@ -259,21 +282,69 @@ public class ExcelWriter {
 			} else { 
 				totalRow = page3StartRow + page3Items; // その他は全て109行目
 			}
-			//writeCell(sheet, "B" + totalRow, "合計"); 
-			//writeCell(sheet, "H" + totalRow, String.valueOf(totalAmount));
 			
-			//writeCell(sheet, items.getString("column1") + totalRow, "合計");
-			
-			if(items.has("amount")) {
-				writeCell(sheet, items.getString("column1") + totalRow, "合計");
+			if(items.has("total")) {
+				writeCell(sheet, items.getString("total") + totalRow, "合計");
 				writeCell(sheet, items.getString("amount") + totalRow, String.valueOf(totalAmount));
+				
+				// 合計行のセル範囲を取得
+				int firstColumn = items.getInt("totalNum"); // 最初の列番号
+				int lastColumn = sheet.getRow(totalRow - 1).getLastCellNum() - 1; // 最後の列番号
+				
+				// 合計行のセル範囲の上部の罫線を太くする
+				CellRangeAddress rangeAddress = new CellRangeAddress(totalRow - 1, totalRow - 1, firstColumn, lastColumn);
+				setRegionBorder(rangeAddress,  sheet, workbook, 166, 166, 166);
 			}else {
-				//何もしない
+				// 何もしない
 			}
-			//writeCell(sheet, items.getString("column5") + totalRow, String.valueOf(totalAmount));
-			
 		}
-		workbook.setPrintArea(0, "$A$1:$M$" + printEndRow);
+		workbook.setPrintArea(0, items.getString("printArea") + printEndRow);
+	}
+
+	// Excelの合計行の上部に罫線を挿入するメソッド
+	private static void setRegionBorder(CellRangeAddress region, Sheet sheet, Workbook workbook, int red, int green, int blue) {
+		int firstColumn = region.getFirstColumn();
+		int lastColumn = region.getLastColumn();
+		int rowNum = region.getFirstRow();
+		
+		for (int col = firstColumn; col <= lastColumn; col++) {
+			Row row = sheet.getRow(rowNum);
+			if (row == null) row = sheet.createRow(rowNum);
+			Cell cell = row.getCell(col);
+			if (cell == null) cell = row.createCell(col);
+			
+			// セルの書式設定を反映させるために既存のセルスタイルを反映させる
+			XSSFCellStyle originalStyle = (XSSFCellStyle)cell.getCellStyle(); // 既存のセルスタイルを取得
+			XSSFCellStyle newStyle = (XSSFCellStyle)workbook.createCellStyle();
+			newStyle.cloneStyleFrom(originalStyle); // 既存のスタイルをコピー
+			
+			// セルの上と下の罫線
+			newStyle.setBorderTop(BorderStyle.MEDIUM);
+			newStyle.setBorderBottom(BorderStyle.MEDIUM);
+			newStyle.setTopBorderColor(new XSSFColor(new java.awt.Color(red, green, blue), null));
+			newStyle.setBottomBorderColor(new XSSFColor(new java.awt.Color(red, green, blue), null));
+			
+			if (col == firstColumn) {
+				// 最初のセルの左と右の罫線
+				newStyle.setBorderLeft(BorderStyle.MEDIUM);
+				newStyle.setBorderRight(BorderStyle.THIN);
+				newStyle.setLeftBorderColor(new XSSFColor(new java.awt.Color(red, green, blue), null));
+				newStyle.setRightBorderColor(new XSSFColor(new java.awt.Color(red, green, blue), null));
+			} else if (col == lastColumn) {
+				// 最後のセルの左と右の罫線
+				newStyle.setBorderLeft(BorderStyle.THIN);
+				newStyle.setBorderRight(BorderStyle.MEDIUM);
+				newStyle.setLeftBorderColor(new XSSFColor(new java.awt.Color(red, green, blue), null));
+				newStyle.setRightBorderColor(new XSSFColor(new java.awt.Color(red, green, blue), null));
+			} else {
+				// 中間のセルの左と右の罫線
+				newStyle.setBorderLeft(BorderStyle.THIN);
+				newStyle.setBorderRight(BorderStyle.THIN);
+				newStyle.setLeftBorderColor(new XSSFColor(new java.awt.Color(red, green, blue), null));
+				newStyle.setRightBorderColor(new XSSFColor(new java.awt.Color(red, green, blue), null));
+			}
+			cell.setCellStyle(newStyle);
+		}	
 	}
 	
 	private static void writeItemRow(Sheet sheet, JSONObject item, JSONObject items, int rowNum) {
@@ -281,40 +352,28 @@ public class ExcelWriter {
 		if (row == null) {
 			row = sheet.createRow(rowNum); // 取得しようとした行が null の場合、新しい行を作成し row に代入
 		}
-		// writeCell はExcelシートの指定されたセルに値を書き込む関数 
-		// itemsConfig.getString("column") 設定ファイルから"column"に対応する列名(B列)を取得
-		// item.getString("column") 現在の"column"に対応する値を取得
-		writeCell(sheet, items.getString("column1") + (rowNum + 1), item.getString("column1"));
-		writeCell(sheet, items.getString("column2") + (rowNum + 1), item.getString("column2"));
-		writeCell(sheet, items.getString("column3") + (rowNum + 1), item.getString("column3"));
-		writeCell(sheet, items.getString("column4") + (rowNum + 1), item.getString("column4"));
-		
-		/*********************************************************************************************************/
+
 		Iterator<String> ite = item.keys();
 		while(ite.hasNext()) {
 			String key = ite.next();
-			System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> "+key);
-			
-			// このイテレータを利用して
-			// キーワードを動的に判定できるのでは？
-			
-			// あと、合計行の罫線もヨロシク( ｀・∀・´)ﾉﾖﾛｼｸ
+			if (items.has(key)) {
+				try {
+					writeCell(sheet, items.getString(key) + (rowNum + 1), item.getString(key));
+				} catch (JSONException e) {
+					System.err.println("キーが存在しません " + key);
+					e.printStackTrace();
+				}
+			} else {
+				System.err.println("キーが存在しません " + key);
+			}
 		}
-		
-		//writeCell(sheet, items.getString("column5") + (rowNum + 1), item.getString("column5"));
-		if(item.has("amount")) {
-			writeCell(sheet, items.getString("amount") + (rowNum + 1), item.getString("amount"));
-		}else {
-			writeCell(sheet, items.getString("column5") + (rowNum + 1), item.getString("column5"));
-		}
-		/*********************************************************************************************************/
-		
-		writeCell(sheet, items.getString("column6") + (rowNum + 1), item.getString("column6"));
 	}
 
-	public static void writeCell(Sheet sheet, String cellAddress, String cellvalue) { // cellAddress 書き込み先のセルアドレス ("A1", "B5")を表す文字列
+	public static Cell writeCell(Sheet sheet, String cellAddress, String cellvalue) {
+		Cell cell;
 		if (cellAddress == null || cellAddress.isEmpty()) {
 			System.err.println("セルアドレスが無効です。");
+			System.exit(5);
 		}
 		try {
 			CellReference cellReference = new CellReference(cellAddress); // CellReferenceクラス セルアドレスを解析し、行番号と列番号を取得するためのクラス
@@ -325,7 +384,7 @@ public class ExcelWriter {
 				row = sheet.createRow(rowIndex); // 新しい行を作成し、rowに格納
 			}
 
-			Cell cell = row.getCell(columnIndex); // 指定された列番号の列オブジェクトを取得し、cellに格納
+			cell = row.getCell(columnIndex); // 指定された列番号の列オブジェクトを取得し、cellに格納
 			if (cell == null) { // cell が null の時
 				cell = row.createCell(columnIndex); // 新しいセルを作成し、cellに格納
 			}
@@ -339,7 +398,10 @@ public class ExcelWriter {
 			}
 		} catch (IllegalArgumentException e) {
 			System.err.println("セルアドレスが無効です。 address:" + cellAddress);
+			System.exit(5);
 			throw e;
 		}
+		return cell;
 	}
+	
 }

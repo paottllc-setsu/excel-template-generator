@@ -8,7 +8,7 @@
   "tax": "L26",
   "totalWithTax2": "L27",
   "items": {
-    "page1startRow": 16,
+    "page1StartRow": 16,
     "page2StartRow": 39,
     "page3StartRow": 75,
     "page1Items": 21,
@@ -18,7 +18,10 @@
     "column2": "E",
     "column3": "F",
     "column4": "G",
-    "column5": "H",
-    "column6": "I"
+    "amount": "H",
+    "column6": "I",
+    "total" : "B",
+    "totalNum" : 1,
+    "printArea" : "$A$1:$M$"
   }
 }

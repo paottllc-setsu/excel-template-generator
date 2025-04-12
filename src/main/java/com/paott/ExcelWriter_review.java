@@ -18,7 +18,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class ExcelWriter {
+public class ExcelWriter_review {
 
 	public static void main(String[] args) {
 		// args[]引数にデータが渡されない時の処理
@@ -166,7 +166,7 @@ public class ExcelWriter {
 	}
 	
 	public static void writeData(Workbook workbook, Sheet sheet, JSONObject jsonObject, JSONObject cellConfig, JSONArray configJson) {
-		// mitumoriConfig.jsonまたはseikyuConfig.jsonのデータを処理
+		// mode0.jsonまたはmode1.jsonのデータを処理
 		for (int i = 0; i < configJson.length(); i++) {
 			JSONObject config = configJson.getJSONObject(i);
 			String cellAddress = config.getString("cellAddress");
